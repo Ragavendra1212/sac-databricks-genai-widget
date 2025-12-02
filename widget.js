@@ -6,28 +6,27 @@ class DatabricksWidget extends HTMLElement {
 
         this.shadowRoot.innerHTML = `
             <style>
-                .box { font-family: Arial; padding: 12px; border: 1px solid #ccc; }
+                .box { font-family: Arial; padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
                 textarea { width: 100%; height: 70px; margin-top: 8px; }
-                button { margin-top: 10px; padding: 8px; width: 100%; }
+                button { margin-top: 10px; padding: 8px; width: 100%; cursor: pointer; }
                 .response {
-                    margin-top: 12px; padding: 10px; 
+                    margin-top: 12px; padding: 10px;
                     background: #f9f9f9; border: 1px solid #ddd;
-                    min-height: 60px;
+                    min-height: 60px; white-space: pre-wrap;
                 }
             </style>
 
             <div class="box">
-                <label>Enter Databricks Prompt:</label>
+                <label><b>Databricks Prompt:</b></label>
                 <textarea id="prompt"></textarea>
 
                 <button id="btn">Send to Databricks</button>
 
-                <div class="response" id="response">Response here...</div>
+                <div class="response" id="response">Response will appear here…</div>
             </div>
         `;
     }
 
-    // Called when widget loads
     connectedCallback() {
         this.shadowRoot.getElementById("btn")
             .addEventListener("click", () => this.callDatabricks());
@@ -49,16 +48,13 @@ class DatabricksWidget extends HTMLElement {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    "inputs": prompt
-                })
+                body: JSON.stringify({ "inputs": prompt })
             });
 
             const data = await res.json();
 
-            box.innerHTML = data.outputs || JSON.stringify(data);
+            box.innerHTML = data.outputs || JSON.stringify(data, null, 2);
 
-            // Dispatch to SAC application
             this.dispatchEvent(
                 new CustomEvent("onResponse", {
                     detail: data,
@@ -72,11 +68,10 @@ class DatabricksWidget extends HTMLElement {
         }
     }
 
-    // SAC property setters
-    set apiUrl(val) { this._apiUrl = val; }
+    set apiUrl(v) { this._apiUrl = v; }
     get apiUrl() { return this._apiUrl; }
 
-    set token(val) { this._token = val; }
+    set token(v) { this._token = v; }
     get token() { return this._token; }
 }
 

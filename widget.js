@@ -3,10 +3,8 @@
     constructor() {
       super();
 
-      // Create shadow root
       const shadow = this.attachShadow({ mode: "open" });
 
-      // Simple container
       const container = document.createElement("div");
       container.style.fontFamily = "Arial, sans-serif";
       container.style.fontSize = "12px";
@@ -19,7 +17,7 @@
       title.textContent = "Databricks GenAI Widget";
 
       const info = document.createElement("div");
-      info.textContent = "If you can see this, the custom widget JS loaded correctly.";
+      info.textContent = "If you can see this box, the widget JS loaded correctly.";
       info.style.fontSize = "11px";
 
       container.appendChild(title);
@@ -28,6 +26,5 @@
     }
   }
 
-  // Register custom element
   customElements.define("databricks-genai-widget", DatabricksGenAIWidget);
 })();

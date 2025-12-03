@@ -24,7 +24,7 @@
     },
     "proxyUrl": {
       "type": "string",
-      "default": "https://your-https-proxy-host/invoke",
+      "default": "http://127.0.0.1:5000/invoke",
       "description": "HTTPS URL of the proxy that calls your Databricks endpoint."
     },
     "defaultPrompt": {

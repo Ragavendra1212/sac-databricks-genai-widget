@@ -161,7 +161,7 @@
     async _callDatabricks() {
       const proxyUrl =
         (this._props && this._props.proxyUrl) ||
-        "https://your-https-proxy-host/invoke";
+        "http://127.0.0.1:5000/invoke";
 
       const promptText =
         (this._promptInput && this._promptInput.value) ||

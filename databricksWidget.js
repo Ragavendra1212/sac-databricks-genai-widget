@@ -92,6 +92,8 @@
       this._onRunClick = this._onRunClick.bind(this);
     }
 
+    // === SAC lifecycle hooks ===
+
     // Called by SAC before updating properties
     onCustomWidgetBeforeUpdate(changedProperties) {
       this._props = Object.assign({}, this._props, changedProperties);
@@ -126,20 +128,24 @@
       }
     }
 
-    _onRunClick() {
-      this._callDatabricks();
-    }
+    // === Public methods usable from SAC scripting ===
 
-    // Method exposed to SAC scripting as "refresh"
+    // In SAC scripting: widget.refresh();
     refresh() {
       this._callDatabricks();
     }
 
-    // Method exposed to SAC scripting as "setPrompt(prompt)"
+    // In SAC scripting: widget.setPrompt("some text");
     setPrompt(prompt) {
       if (this._promptInput) {
         this._promptInput.value = prompt || "";
       }
+    }
+
+    // === Internal helpers ===
+
+    _onRunClick() {
+      this._callDatabricks();
     }
 
     _setStatus(text) {
@@ -159,6 +165,9 @@
     }
 
     async _callDatabricks() {
+      // Default proxy URL:
+      //  - For local index.html testing → http://127.0.0.1:5000/invoke
+      //  - For SAC in production → CHANGE THIS to your HTTPS proxy URL
       const proxyUrl =
         (this._props && this._props.proxyUrl) ||
         "http://127.0.0.1:5000/invoke";
@@ -179,15 +188,10 @@
       this._outputEl.textContent = "// Calling Databricks via proxy...";
 
       try {
-        // Adjust this payload to match what your proxy expects
+        // IMPORTANT: match your Flask proxy's expectation:
+        // it wants JSON body: { "prompt": "<text>" }
         const requestBody = {
-          // example structure – change to your own
-          inputs: [
-            {
-              role: "user",
-              content: promptText
-            }
-          ]
+          prompt: promptText
         };
 
         const response = await fetch(proxyUrl, {
@@ -203,7 +207,7 @@
         try {
           data = JSON.parse(text);
         } catch (e) {
-          data = text;
+          data = text; // if response is plain text
         }
 
         if (!response.ok) {

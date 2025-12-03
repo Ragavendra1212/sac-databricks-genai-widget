@@ -1,78 +1,36 @@
-class DatabricksWidget extends HTMLElement {
+class DatabricksGenAIWidget extends HTMLElement {
+  constructor() {
+    super();
 
-    constructor() {
-        super();
-        this.attachShadow({ mode: "open" });
+    this._shadow = this.attachShadow({ mode: "open" });
 
-        this.shadowRoot.innerHTML = `
-            <style>
-                .box { font-family: Arial; padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
-                textarea { width: 100%; height: 70px; margin-top: 8px; }
-                button { margin-top: 10px; padding: 8px; width: 100%; cursor: pointer; }
-                .response {
-                    margin-top: 12px; padding: 10px;
-                    background: #f9f9f9; border: 1px solid #ddd;
-                    min-height: 60px; white-space: pre-wrap;
-                }
-            </style>
+    // Internal state
+    this._props = {
+      proxyUrl: "",
+      promptText: "",
+      responseText: "",
+      autoTriggerOnSelection: true
+    };
 
-            <div class="box">
-                <label><b>Databricks Prompt:</b></label>
-                <textarea id="prompt"></textarea>
+    this._bindingData = null;
 
-                <button id="btn">Send to Databricks</button>
+    // UI Elements
+    const container = document.createElement("div");
+    container.style.fontFamily = "Arial, sans-serif";
+    container.style.padding = "8px";
+    container.style.fontSize = "12px";
 
-                <div class="response" id="response">Response will appear here…</div>
-            </div>
-        `;
-    }
+    const title = document.createElement("h4");
+    title.innerText = "Databricks GenAI Widget";
 
-    connectedCallback() {
-        this.shadowRoot.getElementById("btn")
-            .addEventListener("click", () => this.callDatabricks());
-    }
+    const promptLabel = document.createElement("div");
+    promptLabel.innerText = "Prompt:";
+    promptLabel.style.fontWeight = "bold";
 
-    async callDatabricks() {
-        const prompt = this.shadowRoot.getElementById("prompt").value;
-        const box = this.shadowRoot.getElementById("response");
+    this.promptArea = document.createElement("textarea");
+    this.promptArea.style.width = "100%";
+    this.promptArea.style.height = "60px";
+    this.promptArea.style.boxSizing = "border-box";
 
-        box.innerHTML = "Calling Databricks...";
-
-        const url = this.apiUrl;
-        const token = this.token;
-
-        try {
-            const res = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ "inputs": prompt })
-            });
-
-            const data = await res.json();
-
-            box.innerHTML = data.outputs || JSON.stringify(data, null, 2);
-
-            this.dispatchEvent(
-                new CustomEvent("onResponse", {
-                    detail: data,
-                    bubbles: true,
-                    composed: true
-                })
-            );
-
-        } catch (err) {
-            box.innerHTML = "Error: " + err.message;
-        }
-    }
-
-    set apiUrl(v) { this._apiUrl = v; }
-    get apiUrl() { return this._apiUrl; }
-
-    set token(v) { this._token = v; }
-    get token() { return this._token; }
-}
-
-customElements.define("databricks-widget", DatabricksWidget);
+    this.button = document.createElement("button");
+    this.button.innerText = "Call

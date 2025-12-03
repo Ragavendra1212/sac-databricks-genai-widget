@@ -1,6 +1,6 @@
 (function () {
+  // Very simple custom element, no modern JS features
   function DatabricksGenAIWidget() {
-    // HTMLElement constructor
     return Reflect.construct(HTMLElement, [], DatabricksGenAIWidget);
   }
 
@@ -8,7 +8,6 @@
   DatabricksGenAIWidget.prototype.constructor = DatabricksGenAIWidget;
 
   DatabricksGenAIWidget.prototype.connectedCallback = function () {
-    // Simple shadow DOM
     var shadow = this.attachShadow({ mode: "open" });
 
     var container = document.createElement("div");
@@ -24,7 +23,7 @@
 
     var info = document.createElement("div");
     info.textContent =
-      "If you can see this box, the widget JS loaded correctly in SAC.";
+      "If you can see this box, the widget JS loaded correctly.";
     info.style.fontSize = "11px";
 
     container.appendChild(title);
@@ -32,6 +31,5 @@
     shadow.appendChild(container);
   };
 
-  // Register the element
   customElements.define("databricks-genai-widget", DatabricksGenAIWidget);
 })();

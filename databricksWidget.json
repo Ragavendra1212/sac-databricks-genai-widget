@@ -4,7 +4,6 @@
   "name": "Databricks Proxy Widget",
   "description": "Calls a Databricks serving endpoint through an HTTP proxy and shows the JSON response.",
   "vendor": "Raghavendra Akula",
-  "icon": "https://ragavendra1212.github.io/sac-databricks-widget/icon.png",
   "supportsMobile": true,
 
   "webcomponents": [

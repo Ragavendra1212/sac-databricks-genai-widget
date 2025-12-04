@@ -7,7 +7,7 @@
       :host {
         display: block;
         font-family: Arial, sans-serif;
-        font-size: 13px;
+        font-size: 16px;
         color: #222;
       }
       .wrapper {
@@ -105,7 +105,7 @@
 
     <div class="wrapper">
       <div class="header">
-        <div class="title" id="title">Databricks GENAI via Proxy</div>
+        <div class="title" id="title">Databricks GENAI</div>
         <div class="status-area">
           <div class="spinner" id="spinner"></div>
           <div class="status" id="status">Idle</div>
@@ -116,11 +116,11 @@
       <div class="hint">The request is sent to your configured proxy URL, which then calls Databricks.</div>
 
       <div class="buttons">
-        <button id="runButton">Invoke via Proxy</button>
+        <button id="runButton">Submit</button>
         <button id="clearButton">Clear</button>
       </div>
 
-      <pre id="output">// Response will appear here</pre>
+      <pre id="output">// Prompt Ouput will appear here</pre>
     </div>
   `;
 
@@ -130,7 +130,7 @@
       this._props = {};
 
       // default values (can be overridden by SAC properties)
-      this.title = "Databricks GENAI via Proxy";
+      this.title = "Databricks GENAI";
       this.proxyUrl = "http://127.0.0.1:5000/invoke"; // local testing default
       this.defaultPrompt = "Hello from SAP Analytics Cloud";
       this.max_tokens = 1024;

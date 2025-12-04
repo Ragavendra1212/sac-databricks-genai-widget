@@ -417,7 +417,7 @@
     }
   }
 
-  // Tag MUST match JSON "tagg"
+  // Tag MUST match JSON "tag"
   customElements.define(
     "com-raghavendra-sap-databrickswidget",
     DatabricksWidget

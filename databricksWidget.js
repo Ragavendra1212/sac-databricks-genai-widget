@@ -1,4 +1,9 @@
 (function () {
+  console.log("DatabricksWidget.js: script loaded in SAC");
+
+  const template = document.createElement("template");
+
+(function () {
   const template = document.createElement("template");
   template.innerHTML = `
     <style>
@@ -257,7 +262,7 @@
 
   // CRITICAL: tag matches JSON exactly
   customElements.define(
-    "com.raghavendra.sap.databrickswidget_1",
+    "com-raghavendra-sap-databrickswidget",
     DatabricksWidget
   );
 })();

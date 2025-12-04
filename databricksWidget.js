@@ -257,7 +257,7 @@
 
   // CRITICAL: tag matches JSON exactly
   customElements.define(
-    "com-raghavendra-sap-databrickswidget",
+    "com.raghavendra.sap.databrickswidget_1",
     DatabricksWidget
   );
 })();

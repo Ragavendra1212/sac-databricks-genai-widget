@@ -79,8 +79,9 @@
       super();
       this._props = {};
 
+      // default values (can be overridden by SAC properties)
       this.title = "Databricks GENAI via Proxy";
-      this.proxyUrl = "http://127.0.0.1:5000/invoke"; // default for local index.html testing
+      this.proxyUrl = "http://127.0.0.1:5000/invoke"; // local testing default
       this.defaultPrompt = "Hello from SAP Analytics Cloud";
       this.max_tokens = 1024;
       this.systemPrompt = "";
@@ -113,7 +114,8 @@
         this.proxyUrl = this._props.proxyUrl;
       }
       if ("defaultPrompt" in this._props) {
-        this.defaultPrompt = this._props.defaultPrompt || "Hello from SAP Analytics Cloud";
+        this.defaultPrompt =
+          this._props.defaultPrompt || "Hello from SAP Analytics Cloud";
       }
       if ("max_tokens" in this._props) {
         this.max_tokens = this._props.max_tokens;
@@ -138,6 +140,7 @@
       }
     }
 
+    // Optional scripting helpers
     refresh() {
       this._callDatabricks();
     }
@@ -148,6 +151,7 @@
       }
     }
 
+    // ===== Internal helpers =====
     _setStatus(text) {
       if (this._statusEl) {
         this._statusEl.textContent = text;
@@ -158,8 +162,8 @@
       this._callDatabricks();
     }
 
-    // === Your proxy-based code integrated ===
     _callDatabricks() {
+      // Use property from SAC if set, else fallback to this.proxyUrl
       const proxyUrl =
         (this._props && this._props.proxyUrl) ||
         this.proxyUrl ||

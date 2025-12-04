@@ -16,6 +16,9 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fafafa;
       }
       .header {
         display: flex;
@@ -73,49 +76,47 @@
     constructor() {
       super();
       this._props = {};
-      this.apiKey = "";      // patToken mapping
-      this.max_tokens = 1024;
+
+      // properties mapped from JSON
       this.endpointUrl = "";
+      this.patToken = "";
+      this.max_tokens = 1024;
       this.systemPrompt = "";
 
-      this._shadowRoot = this.attachShadow({ mode: "open" });
-      this._shadowRoot.appendChild(template.content.cloneNode(true));
+      const shadow = this.attachShadow({ mode: "open" });
+      shadow.appendChild(template.content.cloneNode(true));
 
-      this._titleEl = this._shadowRoot.getElementById("title");
-      this._statusEl = this._shadowRoot.getElementById("status");
-      this._promptInput = this._shadowRoot.getElementById("promptInput");
-      this._runButton = this._shadowRoot.getElementById("runButton");
-      this._outputEl = this._shadowRoot.getElementById("output");
+      this._titleEl = shadow.getElementById("title");
+      this._statusEl = shadow.getElementById("status");
+      this._promptInput = shadow.getElementById("promptInput");
+      this._runButton = shadow.getElementById("runButton");
+      this._outputEl = shadow.getElementById("output");
 
       this._onRunClick = this._onRunClick.bind(this);
     }
 
-    // === SAC lifecycle hooks ===
+    // ===== SAC lifecycle hooks =====
     onCustomWidgetBeforeUpdate(changedProperties) {
       this._props = Object.assign({}, this._props, changedProperties);
     }
 
     onCustomWidgetAfterUpdate(changedProperties) {
-      if ("title" in this._props && this._titleEl) {
-        this._titleEl.textContent = this._props.title || "Databricks GENAI";
-      }
-
       if ("endpointUrl" in this._props) {
         this.endpointUrl = this._props.endpointUrl;
       }
-
       if ("patToken" in this._props) {
-        this.apiKey = this._props.patToken;
+        this.patToken = this._props.patToken;
       }
-
       if ("max_tokens" in this._props) {
         this.max_tokens = this._props.max_tokens;
       }
-
       if ("systemPrompt" in this._props) {
         this.systemPrompt = this._props.systemPrompt || "";
       }
     }
+
+    onCustomWidgetResize(width, height) {}
+    onCustomWidgetDestroy() {}
 
     connectedCallback() {
       if (this._runButton) {
@@ -129,32 +130,27 @@
       }
     }
 
-    // === Methods called from JSON "methods" bodies (optional) ===
+    // ===== Methods referenced in JSON "methods" bodies (optional) =====
     setEndpointUrl(endpointUrl) {
       this.endpointUrl = endpointUrl;
     }
-
     getEndpointUrl() {
       return this.endpointUrl;
     }
-
     setPatToken(patToken) {
-      this.apiKey = patToken;
+      this.patToken = patToken;
     }
-
     getPatToken() {
-      return this.apiKey;
+      return this.patToken;
     }
-
     setMax_tokens(max_tokens) {
       this.max_tokens = max_tokens;
     }
-
     getMax_tokens() {
       return this.max_tokens;
     }
 
-    // === Public methods for SAC scripting (if needed) ===
+    // ===== SAC scripting convenience methods =====
     refresh() {
       this._callDatabricks();
     }
@@ -165,11 +161,20 @@
       }
     }
 
-    // === Internal helpers ===
+    // ===== Internal helpers =====
     _setStatus(text) {
       if (this._statusEl) {
         this._statusEl.textContent = text;
       }
+    }
+
+    _fireOnClick() {
+      const ev = new CustomEvent("onClick", {
+        detail: { message: "Invoke button clicked" },
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(ev);
     }
 
     _onRunClick() {
@@ -177,19 +182,9 @@
       this._callDatabricks();
     }
 
-    _fireOnClick() {
-      // To match "onClick" event in JSON
-      const event = new CustomEvent("onClick", {
-        detail: { message: "Invoke button clicked" },
-        bubbles: true,
-        composed: true
-      });
-      this.dispatchEvent(event);
-    }
-
     async _callDatabricks() {
-      const endpoint = this.endpointUrl || (this._props && this._props.endpointUrl);
-      const token = this.apiKey || (this._props && this._props.patToken);
+      const endpoint = this.endpointUrl;
+      const token = this.patToken;
 
       if (!endpoint) {
         this._outputEl.textContent =
@@ -219,8 +214,7 @@
       this._outputEl.textContent = "// Calling Databricks endpoint...";
 
       try {
-        // Adjust the body to what your Databricks endpoint expects.
-        // Here we send { prompt, max_tokens } like your earlier proxy.
+        // Adjust this body to your real Databricks serving schema if needed
         const body = {
           prompt: finalPrompt,
           max_tokens: this.max_tokens
@@ -240,7 +234,7 @@
         try {
           data = JSON.parse(text);
         } catch (e) {
-          data = text; // not JSON
+          data = text;
         }
 
         if (!response.ok) {
@@ -261,7 +255,7 @@
     }
   }
 
-  // TAG MUST MATCH JSON "tag"
+  // CRITICAL: tag matches JSON exactly
   customElements.define(
     "com-raghavendra-sap-databrickswidget",
     DatabricksWidget

@@ -7,7 +7,7 @@
       :host {
         display: block;
         font-family: Arial, sans-serif;
-        font-size: 16px;
+        font-size: 13px;
         color: #222;
       }
       .wrapper {
@@ -105,7 +105,7 @@
 
     <div class="wrapper">
       <div class="header">
-        <div class="title" id="title">Databricks GENAI</div>
+        <div class="title" id="title">Databricks GENAI via Proxy</div>
         <div class="status-area">
           <div class="spinner" id="spinner"></div>
           <div class="status" id="status">Idle</div>
@@ -116,11 +116,11 @@
       <div class="hint">The request is sent to your configured proxy URL, which then calls Databricks.</div>
 
       <div class="buttons">
-        <button id="runButton">Submit</button>
+        <button id="runButton">Invoke via Proxy</button>
         <button id="clearButton">Clear</button>
       </div>
 
-      <pre id="output">// Prompt Ouput will appear here</pre>
+      <pre id="output">// Response will appear here</pre>
     </div>
   `;
 
@@ -130,7 +130,7 @@
       this._props = {};
 
       // default values (can be overridden by SAC properties)
-      this.title = "Databricks GENAI";
+      this.title = "Databricks GENAI via Proxy";
       this.proxyUrl = "http://127.0.0.1:5000/invoke"; // local testing default
       this.defaultPrompt = "Hello from SAP Analytics Cloud";
       this.max_tokens = 1024;
@@ -250,16 +250,16 @@
     }
 
     _extractTextFromResponse(data) {
-      // Try to map common LLM / Databricks response shapes to plain text
       if (data == null) {
         return "";
       }
 
+      // If it's already a string, just show it
       if (typeof data === "string") {
         return data;
       }
 
-      // Common OpenAI-like: { choices: [ { text: "..."} ] }
+      // --- Common OpenAI / chat style ---
       if (data.choices && data.choices.length > 0) {
         const c0 = data.choices[0];
         if (typeof c0.text === "string") {
@@ -270,25 +270,62 @@
         }
       }
 
-      // Databricks-style generic fields
+      // --- Very common Databricks / ML-style patterns ---
+
+      // { predictions: ["text", ...] }
+      if (Array.isArray(data.predictions) && data.predictions.length > 0) {
+        if (typeof data.predictions[0] === "string") {
+          return data.predictions.join("\n");
+        }
+        if (typeof data.predictions[0].text === "string") {
+          return data.predictions.map(p => p.text).join("\n");
+        }
+        if (typeof data.predictions[0].generated_text === "string") {
+          return data.predictions.map(p => p.generated_text).join("\n");
+        }
+        if (data.predictions[0].content && typeof data.predictions[0].content === "string") {
+          return data.predictions.map(p => p.content).join("\n");
+        }
+      }
+
+      // { output_text: "..." } or { result_text: "..." }
+      if (typeof data.output_text === "string") {
+        return data.output_text;
+      }
+      if (typeof data.result_text === "string") {
+        return data.result_text;
+      }
+
+      // { result: "..." } or { response: "..." } or { output: "..." }
       if (typeof data.result === "string") {
         return data.result;
-      }
-      if (typeof data.output === "string") {
-        return data.output;
       }
       if (typeof data.response === "string") {
         return data.response;
       }
+      if (typeof data.output === "string") {
+        return data.output;
+      }
 
-      // Sometimes it's an array of texts
+      // { result: { text: "..." } }
+      if (data.result && typeof data.result.text === "string") {
+        return data.result.text;
+      }
+
+      // Arrays of strings or objects with text fields
       if (Array.isArray(data) && data.length > 0) {
         if (typeof data[0] === "string") {
           return data.join("\n");
         }
+        if (typeof data[0].text === "string") {
+          return data.map(x => x.text).join("\n");
+        }
+        if (typeof data[0].generated_text === "string") {
+          return data.map(x => x.generated_text).join("\n");
+        }
       }
 
-      // Fallback: pretty-printed JSON
+      // Last resort: pretty-print JSON
       try {
         return JSON.stringify(data, null, 2);
       } catch (e) {

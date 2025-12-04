@@ -1,6 +1,15 @@
 (function () {
   console.log("DatabricksWidget.js: script loaded");
 
+  // ==== HARD-CODED CONFIG (PoC ONLY) ====
+  const DATABRICKS_ENDPOINT_DEFAULT =
+    "https://dbc-05d89f38-ae70.cloud.databricks.com/serving-endpoints/Raghav_GENAI_new_endpoint_v1/invocations";
+
+  // TODO: put your real PAT here for PoC only.
+  // Example: const DATABRICKS_PAT = "dapiXXXXXXXXXXXXXXXXXXXXXXXX";
+  const DATABRICKS_PAT = "dapi0ad1c5b54cc96ca836171a69f845811f"
+  // ======================================
+
   const template = document.createElement("template");
   template.innerHTML = `
     <style>
@@ -81,8 +90,7 @@
 
       // mapped from JSON properties
       this.title = "Databricks GENAI";
-      this.endpointUrl = "";
-      this.patToken = "";
+      this.endpointUrl = DATABRICKS_ENDPOINT_DEFAULT;
       this.max_tokens = 1024;
       this.systemPrompt = "";
 
@@ -110,11 +118,8 @@
           this._titleEl.textContent = this.title;
         }
       }
-      if ("endpointUrl" in this._props) {
+      if ("endpointUrl" in this._props && this._props.endpointUrl) {
         this.endpointUrl = this._props.endpointUrl;
-      }
-      if ("patToken" in this._props) {
-        this.patToken = this._props.patToken;
       }
       if ("max_tokens" in this._props) {
         this.max_tokens = this._props.max_tokens;
@@ -139,18 +144,12 @@
       }
     }
 
-    // ===== Methods referenced in JSON "methods" bodies =====
+    // ===== Methods referenced in JSON "methods" bodies (optional) =====
     setEndpointUrl(endpointUrl) {
       this.endpointUrl = endpointUrl;
     }
     getEndpointUrl() {
       return this.endpointUrl;
-    }
-    setPatToken(patToken) {
-      this.patToken = patToken;
-    }
-    getPatToken() {
-      return this.patToken;
     }
     setMax_tokens(max_tokens) {
       this.max_tokens = max_tokens;
@@ -192,19 +191,19 @@
     }
 
     _callDatabricks() {
-      const endpoint = this.endpointUrl;
-      const token = this.patToken;
+      const endpoint = this.endpointUrl || DATABRICKS_ENDPOINT_DEFAULT;
+      const token = DATABRICKS_PAT;
       const self = this;
 
       if (!endpoint) {
         this._outputEl.textContent =
-          "Endpoint URL is not set. Please configure 'endpointUrl' in the widget properties.";
+          "Endpoint URL is not set. Please configure 'endpointUrl' in the widget properties or in DATABRICKS_ENDPOINT_DEFAULT.";
         return;
       }
 
-      if (!token) {
+      if (!token || token.startsWith("<PUT_")) {
         this._outputEl.textContent =
-          "PAT token is not set. Please configure 'patToken' in the widget properties.";
+          "DATABRICKS_PAT is not set in DatabricksWidget.js. Please set it for PoC.";
         return;
       }
 
@@ -223,7 +222,6 @@
       this._setStatus("Calling...");
       this._outputEl.textContent = "// Calling Databricks endpoint...";
 
-      // Build request body – adjust this if your endpoint expects a different schema
       const body = {
         prompt: finalPrompt,
         max_tokens: this.max_tokens

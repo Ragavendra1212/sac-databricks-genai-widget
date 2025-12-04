@@ -144,7 +144,7 @@
       }
     }
 
-    // ===== Methods referenced in JSON "methods" bodies (optional) =====
+    // ===== mMethods referenced in JSON "methods" bodies (optional) =====
     setEndpointUrl(endpointUrl) {
       this.endpointUrl = endpointUrl;
     }

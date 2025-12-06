@@ -249,6 +249,10 @@
       this._setStatus("Idle", false);
     }
 
+    /**
+     * Extract natural-language text from Databricks / OpenAI-style responses.
+     * Avoids returning raw JSON so the user only sees readable text.
+     */
     _extractTextFromResponse(data) {
       if (data == null) {
         return "";
@@ -259,34 +263,58 @@
         return data;
       }
 
+      // --- Handle Databricks pyfunc / serving shape:
+      // { predictions: [ "text" ] }
+      // { predictions: [ { answer: "text" } ] }
+      if (Array.isArray(data.predictions) && data.predictions.length > 0) {
+        const first = data.predictions[0];
+
+        // predictions: ["some text", ...]
+        if (typeof first === "string") {
+          return first;
+        }
+
+        // predictions: [{ answer: "some text", ... }]
+        if (first && typeof first === "object") {
+          if (typeof first.answer === "string") {
+            return first.answer;
+          }
+          if (typeof first.text === "string") {
+            return first.text;
+          }
+          if (typeof first.content === "string") {
+            return first.content;
+          }
+        }
+      }
+
       // --- Common OpenAI / chat style ---
-      if (data.choices && data.choices.length > 0) {
+      if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
         const c0 = data.choices[0];
-        if (typeof c0.text === "string") {
+        if (c0 && typeof c0.text === "string") {
           return c0.text;
         }
-        if (c0.message && typeof c0.message.content === "string") {
+        if (c0 && c0.message && typeof c0.message.content === "string") {
           return c0.message.content;
         }
-      }
-
-      // --- Very common Databricks / ML-style patterns ---
-
-      // { predictions: ["text", ...] }
-      if (Array.isArray(data.predictions) && data.predictions.length > 0) {
-        if (typeof data.predictions[0] === "string") {
-          return data.predictions.join("\n");
-        }
-        if (typeof data.predictions[0].text === "string") {
-          return data.predictions.map(p => p.text).join("\n");
-        }
-        if (typeof data.predictions[0].generated_text === "string") {
-          return data.predictions.map(p => p.generated_text).join("\n");
-        }
-        if (data.predictions[0].content && typeof data.predictions[0].content === "string") {
-          return data.predictions.map(p => p.content).join("\n");
+        if (
+          c0 &&
+          c0.message &&
+          Array.isArray(c0.message.content)
+        ) {
+          const joined = c0.message.content
+            .map(part => {
+              if (typeof part === "string") return part;
+              if (part && typeof part.text === "string") return part.text;
+              if (part && typeof part.content === "string") return part.content;
+              return "";
+            })
+            .join("");
+          if (joined.trim()) return joined.trim();
         }
       }
+
+      // --- Other Databricks / ML-style patterns ---
 
       // { output_text: "..." } or { result_text: "..." }
       if (typeof data.output_text === "string") {
@@ -317,20 +345,16 @@
         if (typeof data[0] === "string") {
           return data.join("\n");
         }
-        if (typeof data[0].text === "string") {
+        if (data[0] && typeof data[0].text === "string") {
           return data.map(x => x.text).join("\n");
         }
-        if (typeof data[0].generated_text === "string") {
+        if (data[0] && typeof data[0].generated_text === "string") {
           return data.map(x => x.generated_text).join("\n");
         }
       }
 
-      // Last resort: pretty-print JSON
-      try {
-        return JSON.stringify(data, null, 2);
-      } catch (e) {
-        return String(data);
-      }
+      // If nothing matches, return empty string (caller will handle fallback)
+      return "";
     }
 
     _callDatabricks() {
@@ -403,7 +427,15 @@
             const cleanText = self._extractTextFromResponse(data);
 
             self._setStatus("Done", false);
-            self._setOutput(cleanText || "(Empty response)", false);
+
+            if (cleanText && cleanText.trim()) {
+              self._setOutput(cleanText, false);
+            } else {
+              self._setOutput(
+                "No answer text could be extracted from the response.",
+                true
+              );
+            }
           });
         })
         .catch(function (err) {

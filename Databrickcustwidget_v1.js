@@ -112,11 +112,11 @@
         </div>
       </div>
 
-      <textarea id="promptInput" placeholder="Type your question for the Databricks model..."></textarea>
+      <textarea id="promptInput" placeholder="Type your Prompt here..."></textarea>
       <div class="hint">The request is sent to your configured proxy URL, which then calls Databricks.</div>
 
       <div class="buttons">
-        <button id="runButton">Invoke via Proxy</button>
+        <button id="runButton">Get</button>
         <button id="clearButton">Clear</button>
       </div>
 

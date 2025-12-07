@@ -389,8 +389,9 @@
         return;
       }
 
-      this._setStatus("Calling proxy...", true);
-      this._setOutput("// Calling proxy: " + proxyUrl, false);
+      this._setStatus("Thinking..", true);
+     // this._setOutput("// Calling proxy: " + proxyUrl, false);
+      this._setOutput("Thnking", false);
 
       const body = {
         prompt: promptText,

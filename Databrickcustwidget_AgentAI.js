@@ -1,5 +1,5 @@
 (function () {
-  console.log("DatabricksWidget.js (proxy version, UX enhanced): script loaded");
+  console.log("Databricks AGENT widget (proxy) script loaded");
 
   const template = document.createElement("template");
   template.innerHTML = `
@@ -124,14 +124,14 @@
     </div>
   `;
 
-  class DatabricksWidget extends HTMLElement {
+  class DatabricksAgentWidget extends HTMLElement {
     constructor() {
       super();
       this._props = {};
 
-      // default values (can be overridden by SAC properties)
+      // defaults (can be overridden by SAC properties)
       this.title = "Databricks Agent via Proxy";
-      this.proxyUrl = "http://127.0.0.1:5000/invoke"; // local testing default
+      this.proxyUrl = "http://127.0.0.1:5000/invoke";
       this.defaultPrompt = "Hello from SAP Analytics Cloud";
       this.max_tokens = 1024;
       this.systemPrompt = "";
@@ -251,14 +251,14 @@
 
     /**
      * Extract natural-language text from proxy/Databricks response.
-     * Our proxy returns { answer: "..." }, so we handle that first.
+     * Proxy returns { answer: "..." }, so we handle that first.
      */
     _extractTextFromResponse(data) {
       if (data == null) {
         return "";
       }
 
-      // 🔹 1) Our proxy format: { answer: "..." }
+      // 1) Our proxy format: { answer: "..." }
       if (typeof data.answer === "string") {
         return data.answer;
       }
@@ -268,32 +268,19 @@
         return data;
       }
 
-      // --- Handle Databricks pyfunc / serving shape:
-      // { predictions: [ "text" ] }
-      // { predictions: [ { answer: "text" } ] }
+      // --- Fallbacks (kept for flexibility, not critical now) ---
       if (Array.isArray(data.predictions) && data.predictions.length > 0) {
         const first = data.predictions[0];
-
-        // predictions: ["some text", ...]
         if (typeof first === "string") {
           return first;
         }
-
-        // predictions: [{ answer: "some text", ... }]
         if (first && typeof first === "object") {
-          if (typeof first.answer === "string") {
-            return first.answer;
-          }
-          if (typeof first.text === "string") {
-            return first.text;
-          }
-          if (typeof first.content === "string") {
-            return first.content;
-          }
+          if (typeof first.answer === "string") return first.answer;
+          if (typeof first.text === "string") return first.text;
+          if (typeof first.content === "string") return first.content;
         }
       }
 
-      // --- Common OpenAI / chat style ---
       if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
         const c0 = data.choices[0];
         if (c0 && typeof c0.text === "string") {
@@ -302,59 +289,22 @@
         if (c0 && c0.message && typeof c0.message.content === "string") {
           return c0.message.content;
         }
-        if (
-          c0 &&
-          c0.message &&
-          Array.isArray(c0.message.content)
-        ) {
-          const joined = c0.message.content
-            .map(part => {
-              if (typeof part === "string") return part;
-              if (part && typeof part.text === "string") return part.text;
-              if (part && typeof part.content === "string") return part.content;
-              return "";
-            })
-            .join("");
-          if (joined.trim()) return joined.trim();
-        }
       }
 
-      // --- Other Databricks / ML-style patterns ---
-
-      if (typeof data.output_text === "string") {
-        return data.output_text;
-      }
-      if (typeof data.result_text === "string") {
-        return data.result_text;
-      }
-
-      if (typeof data.result === "string") {
-        return data.result;
-      }
-      if (typeof data.response === "string") {
-        return data.response;
-      }
-      if (typeof data.output === "string") {
-        return data.output;
-      }
-
-      if (data.result && typeof data.result.text === "string") {
-        return data.result.text;
-      }
+      if (typeof data.output_text === "string") return data.output_text;
+      if (typeof data.result_text === "string") return data.result_text;
+      if (typeof data.result === "string") return data.result;
+      if (typeof data.response === "string") return data.response;
+      if (typeof data.output === "string") return data.output;
+      if (data.result && typeof data.result.text === "string") return data.result.text;
 
       if (Array.isArray(data) && data.length > 0) {
-        if (typeof data[0] === "string") {
-          return data.join("\n");
-        }
+        if (typeof data[0] === "string") return data.join("\n");
         if (data[0] && typeof data[0].text === "string") {
           return data.map(x => x.text).join("\n");
         }
-        if (data[0] && typeof data[0].generated_text === "string") {
-          return data.map(x => x.generated_text).join("\n");
-        }
       }
 
-      // If nothing matches, return empty string
       return "";
     }
 
@@ -431,7 +381,7 @@
             if (cleanText && cleanText.trim()) {
               self._setOutput(cleanText, false);
             } else {
-              // 🔹 Fallback: show the entire JSON response
+              // Fallback: show the entire JSON so we can see what came back
               self._setOutput(
                 typeof data === "string"
                   ? data
@@ -452,9 +402,9 @@
     }
   }
 
-  // Tag MUST match JSON "tag"
+  // Define the NEW element (no conflict with old widget)
   customElements.define(
-    "com-raghavendra-sap-databrickswidget",
-    DatabricksWidget
+    "com-raghavendra-sap-databrickswidget-agent",
+    DatabricksAgentWidget
   );
 })();

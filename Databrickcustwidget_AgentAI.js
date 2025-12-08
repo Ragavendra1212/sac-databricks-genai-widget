@@ -250,8 +250,8 @@
     }
 
     /**
-     * Extract natural-language text from proxy response.
-     * Proxy returns { answer: "..." } so we handle that first.
+     * Extract natural-language text from proxy/Databricks response.
+     * Our proxy returns { answer: "..." }, so we handle that first.
      */
     _extractTextFromResponse(data) {
       if (data == null) {
@@ -354,7 +354,7 @@
         }
       }
 
-      // If nothing matches, return empty string (caller will handle fallback)
+      // If nothing matches, return empty string
       return "";
     }
 
@@ -431,9 +431,12 @@
             if (cleanText && cleanText.trim()) {
               self._setOutput(cleanText, false);
             } else {
+              // 🔹 Fallback: show the entire JSON response
               self._setOutput(
-                "No answer text could be extracted from the response.",
-                true
+                typeof data === "string"
+                  ? data
+                  : JSON.stringify(data, null, 2),
+                false
               );
             }
           });

@@ -105,7 +105,7 @@
 
     <div class="wrapper">
       <div class="header">
-        <div class="title" id="title">Databricks GENAI via Proxy</div>
+        <div class="title" id="title">Databricks Agent via Proxy</div>
         <div class="status-area">
           <div class="spinner" id="spinner"></div>
           <div class="status" id="status">Idle</div>
@@ -113,7 +113,7 @@
       </div>
 
       <textarea id="promptInput" placeholder="Type your Prompt here..."></textarea>
-      <div class="hint">The request is sent to your configured proxy URL, which then calls Databricks.</div>
+      <div class="hint">The request is sent to your configured proxy URL, which then calls the Databricks Agent endpoint.</div>
 
       <div class="buttons">
         <button id="runButton">Get</button>
@@ -130,7 +130,7 @@
       this._props = {};
 
       // default values (can be overridden by SAC properties)
-      this.title = "Databricks GENAI via Proxy";
+      this.title = "Databricks Agent via Proxy";
       this.proxyUrl = "http://127.0.0.1:5000/invoke"; // local testing default
       this.defaultPrompt = "Hello from SAP Analytics Cloud";
       this.max_tokens = 1024;
@@ -158,7 +158,7 @@
 
     onCustomWidgetAfterUpdate(changedProperties) {
       if ("title" in this._props) {
-        this.title = this._props.title || "Databricks GENAI via Proxy";
+        this.title = this._props.title || "Databricks Agent via Proxy";
         if (this._titleEl) {
           this._titleEl.textContent = this.title;
         }
@@ -250,12 +250,17 @@
     }
 
     /**
-     * Extract natural-language text from Databricks / OpenAI-style responses.
-     * Avoids returning raw JSON so the user only sees readable text.
+     * Extract natural-language text from proxy response.
+     * Proxy returns { answer: "..." } so we handle that first.
      */
     _extractTextFromResponse(data) {
       if (data == null) {
         return "";
+      }
+
+      // 🔹 1) Our proxy format: { answer: "..." }
+      if (typeof data.answer === "string") {
+        return data.answer;
       }
 
       // If it's already a string, just show it
@@ -316,7 +321,6 @@
 
       // --- Other Databricks / ML-style patterns ---
 
-      // { output_text: "..." } or { result_text: "..." }
       if (typeof data.output_text === "string") {
         return data.output_text;
       }
@@ -324,7 +328,6 @@
         return data.result_text;
       }
 
-      // { result: "..." } or { response: "..." } or { output: "..." }
       if (typeof data.result === "string") {
         return data.result;
       }
@@ -335,12 +338,10 @@
         return data.output;
       }
 
-      // { result: { text: "..." } }
       if (data.result && typeof data.result.text === "string") {
         return data.result.text;
       }
 
-      // Arrays of strings or objects with text fields
       if (Array.isArray(data) && data.length > 0) {
         if (typeof data[0] === "string") {
           return data.join("\n");
@@ -358,7 +359,6 @@
     }
 
     _callDatabricks() {
-      // Use property from SAC if set, else fallback to this.proxyUrl
       const proxyUrl =
         (this._props && this._props.proxyUrl) ||
         this.proxyUrl ||
@@ -389,9 +389,8 @@
         return;
       }
 
-      this._setStatus("Thinking..", true);
-     // this._setOutput("// Calling proxy: " + proxyUrl, false);
-      this._setOutput("Thnking", false);
+      this._setStatus("Thinking...", true);
+      this._setOutput("Thinking...", false);
 
       const body = {
         prompt: promptText,
